@@ -4,7 +4,7 @@ import { nord } from "@milkdown/theme-nord";
 
 import "@milkdown/theme-nord/style.css";
 
-const markdown = `# Milkdown Vanilla Commonmark
+const markdown = `# Milkdown Vanilla Commonmark 2!!!
 
 > You're scared of a world where you're needed.
 

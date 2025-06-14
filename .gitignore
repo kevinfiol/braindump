@@ -1,1 +1,12 @@
 node_modules
+vendor/*
+build/*.com
+build/*.pid
+build/data/*
+data/*
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.log
+.env

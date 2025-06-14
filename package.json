@@ -1,7 +1,4 @@
 {
-  "scripts": {
-    "build:frontend": "esbuild frontend/index.ts --bundle --minify --outfile=src/js/app.js"
-  },
   "dependencies": {
     "@milkdown/kit": "^7.6.4",
     "@milkdown/theme-nord": "^7.6.4",
