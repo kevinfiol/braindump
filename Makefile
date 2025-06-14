@@ -17,11 +17,12 @@ LOG_FILE=${BUILD_DIR}/redbean.log
 
 # download dependencies
 download:
+	pnpm install
 	curl -o ${REDBEAN} https://redbean.dev/redbean-3.0.0.com && chmod +x ${REDBEAN}
 	curl -o ${ASSIMILATE} https://cosmo.zip/pub/cosmos/bin/assimilate && chmod +x ${ASSIMILATE}
 
 build:
-	node_modules/.bin/esbuild frontend/index.ts --bundle --minify --outfile=src/static/app.js
+	pnpm run build
 	cp -f ${REDBEAN} ${BUILD}
 	cd src/ && zip -r ../${BUILD} `ls -A`
 

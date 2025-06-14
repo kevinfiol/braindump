@@ -3,6 +3,7 @@ vendor/*
 build/*.com
 build/*.pid
 build/data/*
+build/files/*
 data/*
 *.db
 *.db-*
@@ -10,3 +11,7 @@ data/*
 *.sqlite-*
 *.log
 .env
+*.ttf
+*.woff
+*.woff2
+src/build/*
