@@ -1,5 +1,6 @@
 node_modules
 vendor/*
+!.keep
 build/*.com
 build/*.pid
 build/data/*
