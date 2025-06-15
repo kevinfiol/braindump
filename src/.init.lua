@@ -2,12 +2,31 @@ require 'global'
 local _ = require 'lib.lume'
 local moon = require 'lib.fullmoon'
 local constant = require 'constant'
+local util = require 'util'
 
 moon.setTemplate({ '/view/', tmpl = 'fmt' })
 moon.get('/static/*', moon.serveAsset)
+moon.get('/build/*', moon.serveAsset)
 
 moon.get('/', function (r)
   return moon.serveContent('home')
+end)
+
+moon.get('/files', function (r)
+  local ok, tree = pcall(function ()
+    return util.walk(constant.FILES_DIR)
+  end)
+
+  if not ok then
+    LogError('Could not create file tree')
+    moon.setStatus(500)
+    tree = {}
+  end
+
+  return moon.serveContent('json', {
+    ok = ok,
+    data = tree
+  })
 end)
 
 moon.get('/files/:filename', moon.serveAsset)
@@ -31,13 +50,13 @@ moon.post('/files/:filename', function (r)
     moon.setStatus(500)
     return moon.serveContent('json', {
       ok = false,
-      content = content or ''
+      data = content or ''
     })
   end
 
   return moon.serveContent('json', {
     ok = true,
-    content = updated_content
+    data = updated_content
   })
 end)
 

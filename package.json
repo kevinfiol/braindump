@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "esbuild frontend/index.tsx --bundle --minify --jsx-factory=m --jsx-fragment=\"'['\" --loader:.woff=file --loader:.woff2=file --loader:.ttf=file --outfile=src/static/app.js"
+    "build": "esbuild frontend/index.tsx --bundle --minify --jsx-factory=m --jsx-fragment=\"'['\" --loader:.woff=file --loader:.woff2=file --loader:.ttf=file --outfile=src/build/app.js"
   },
   "dependencies": {
     "@milkdown/crepe": "^7.13.1",

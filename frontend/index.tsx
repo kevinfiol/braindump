@@ -1,8 +1,8 @@
-// import '@milkdown/crepe/theme/common/style.css';
-// import '@milkdown/crepe/theme/frame.css';
+import '@milkdown/crepe/theme/common/style.css';
+import '@milkdown/crepe/theme/frame.css';
 
 import { m, mount } from 'umai';
-// import { Crepe } from '@milkdown/crepe';
+import { Crepe } from '@milkdown/crepe';
 import { getSidebarWidth, saveSidebarWidth } from './util';
 
 const RESIZE_HANDLE_CLASS = 'resize-handle';
@@ -43,20 +43,20 @@ function mountResizeHandler(dom) {
   };
 }
 
-// function mountEditor(dom) {
-//   const editor = new Crepe({
-//     root: dom,
-//     defaultValue: '# hellooo lisa'
-//   });
+function mountEditor(dom) {
+  const editor = new Crepe({
+    root: dom,
+    defaultValue: '# hellooo lisa'
+  });
 
-//   editor.create().then(() => {
-//     console.log('milkdown ready');
-//   });
+  editor.create().then(() => {
+    console.log('milkdown ready');
+  });
 
-//   return () => {
-//     editor.destroy();
-//   };
-// }
+  return () => {
+    editor.destroy();
+  };
+}
 
 const App = () => (
   <div class="container">
@@ -65,10 +65,10 @@ const App = () => (
     </div>
 
     <div class="editor-container">
-      <div class="editor">
-        <textarea placeholder="edit your markdown">
-        </textarea>
+      <div class="editor" dom={mountEditor}>
       </div>
     </div>
   </div>
 );
+
+mount(document.getElementById('app'), App);
