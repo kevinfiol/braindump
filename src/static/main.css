@@ -56,3 +56,40 @@ body > #app > .container {
   }
 }
 
+.file-tree {
+  font-family: monospace;
+  font-size: 14px;
+  min-width: 200px;
+  padding: 20px 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.file-tree-node {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  height: 32px;
+  margin: 0;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+
+.file-tree-node:hover {
+  background-color: #343535;
+}
+
+.file-tree-dir .file-tree-node:not(summary),
+.file-tree-dir .file-tree-dir {
+  margin-left: 14px;
+}
+
+.file-tree-dir > summary.file-tree-node::before {
+  content: '📁';
+  padding-right: 4px;
+}
+
+.file-tree-dir[open] > summary.file-tree-node::before {
+  content: '📂';
+}

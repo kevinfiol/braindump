@@ -1,8 +1,9 @@
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 
-import { m, mount } from 'umai';
+import { m, mount, redraw } from 'umai';
 import { Crepe } from '@milkdown/crepe';
+import { state, setFileTree } from './state';
 import { getSidebarWidth, saveSidebarWidth } from './util';
 
 const RESIZE_HANDLE_CLASS = 'resize-handle';
@@ -49,19 +50,44 @@ function mountEditor(dom) {
     defaultValue: '# hellooo lisa'
   });
 
-  editor.create().then(() => {
-    console.log('milkdown ready');
-  });
+  editor.create();
 
   return () => {
     editor.destroy();
   };
 }
 
+async function getFileTree() {
+  let data = {};
+  let error = undefined;
+
+  try {
+    const res = await fetch('/files');
+    if (!res.ok) throw Error(`${res.status}: Could not retrieve file tree`);
+    data = await res.json();
+  } catch (e) {
+    error = e;
+  }
+
+  return { data, error };
+}
+
+// init
+getFileTree()
+  .then(({ data, error }) => {
+    if (error) throw error;
+    setFileTree(data);
+  })
+  .catch(console.error)
+  .finally(redraw);
+
 const App = () => (
   <div class="container">
     <div class="sidebar" dom={mountResizeHandler}>
       <div class={RESIZE_HANDLE_CLASS}></div>
+      {Object.keys(state.fileTree).length && (
+        JSON.stringify(state.fileTree)
+      )}
     </div>
 
     <div class="editor-container">
@@ -70,5 +96,7 @@ const App = () => (
     </div>
   </div>
 );
+
+// https://keb.url.lol/flems-6-15-2025-5eca0a
 
 mount(document.getElementById('app'), App);
