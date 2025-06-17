@@ -7,6 +7,7 @@ local util = require 'util'
 moon.setTemplate({ '/view/', tmpl = 'fmt' })
 moon.get('/static/*', moon.serveAsset)
 moon.get('/build/*', moon.serveAsset)
+moon.get('/files/*.md', moon.serveAsset)
 
 moon.get('/', function (r)
   return moon.serveContent('home')
@@ -29,11 +30,11 @@ moon.get('/files', function (r)
   })
 end)
 
-moon.get('/files/:filename', moon.serveAsset)
-
 moon.post('/files/:filename', function (r)
   local filename = r.params.filename
   local content = r.params.content
+
+  -- p({ filename = filename, content = content })
 
   local ok, result = pcall(function ()
     local fd = unix.open(
@@ -53,6 +54,8 @@ moon.post('/files/:filename', function (r)
   end
 
   return moon.serveContent('json', {
+    -- ok = true,
+    -- result = ''
     ok = ok,
     data = result
   })

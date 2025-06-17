@@ -63,7 +63,8 @@ export class FileTree {
   }
 
   setHandlers(event, handler) {
-    if (typeof handler !== 'function') throw Error('Must pass function as click handler');
+    if (typeof handler !== 'function')
+      throw Error('Must pass function as click handler');
 
     for (const e of this.entries.values()) {
       const { el, data } = e;

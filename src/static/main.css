@@ -77,7 +77,7 @@ body > #app > .container {
 }
 
 .file-tree-node:hover {
-  background-color: #343535;
+  background-color: #e6e6e6;
 }
 
 .file-tree-dir .file-tree-node:not(summary),

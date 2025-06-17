@@ -1,0 +1,3 @@
+- [x] load file content to editor after clicking file in file tree
+- [x] auto save to the actual file on the filesystem after debounce
+- [ ] i dont think saves should be debounced or aborted globally. maybe per file. for simplicity's sake, maybe remove that part for now
