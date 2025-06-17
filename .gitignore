@@ -16,3 +16,4 @@ data/*
 *.woff
 *.woff2
 src/build/*
+.vscode
