@@ -13,6 +13,10 @@ moon.get('/', function (r)
   return moon.serveContent('home')
 end)
 
+moon.get('/u/*', function (r)
+  return moon.serveContent('home')
+end)
+
 moon.get('/files', function (r)
   local ok, result = pcall(function ()
     return util.walk(constant.FILES_DIR)
@@ -30,11 +34,9 @@ moon.get('/files', function (r)
   })
 end)
 
-moon.post('/files/:filename', function (r)
+moon.post('/files', function (r)
   local filename = r.params.filename
   local content = r.params.content
-
-  -- p({ filename = filename, content = content })
 
   local ok, result = pcall(function ()
     local fd = unix.open(
@@ -54,8 +56,6 @@ moon.post('/files/:filename', function (r)
   end
 
   return moon.serveContent('json', {
-    -- ok = true,
-    -- result = ''
     ok = ok,
     data = result
   })

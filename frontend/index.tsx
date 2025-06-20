@@ -2,6 +2,7 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 
 import { m, mount, redraw } from 'umai';
+import navaid from 'navaid';
 import { Crepe } from '@milkdown/crepe';
 import { listenerCtx } from '@milkdown/kit/plugin/listener';
 import { replaceAll, getMarkdown } from '@milkdown/kit/utils';
@@ -10,7 +11,15 @@ import { getSidebarWidth, saveSidebarWidth } from './util';
 import { FileTree } from './file-tree';
 
 const RESIZE_HANDLE_CLASS = 'resize-handle';
-const ref = { fileTree: undefined, editor: {}, currentFile: undefined };
+const ROOT = '/u/';
+
+const router = navaid();
+const fileControllers = {};
+const ref = {
+  fileTree: undefined,
+  editor: {},
+  currentFile: undefined
+};
 
 function debounce(callback, wait = 350) {
   let timer;
@@ -59,7 +68,15 @@ function mountResizeHandler(dom) {
 
 function mountEditor(dom) {
   ref.editor.crepe = new Crepe({
-    root: dom
+    root: dom,
+    featureConfigs: {
+      [Crepe.Feature.ImageBlock]: {
+        // inlineOnUpload?: (file: File) => Promise<string>
+        // onUpload?: (file: File) => Promise<string>
+        inlineOnUpload: () => {}, // TODO: upload to backend
+        onUpload: () => {} // TODO: upload to backend
+      },
+    }
   });
 
   const debouncedUpdateFile = debounce((relPath, content) => {
@@ -90,9 +107,10 @@ function mountFileTree(dom) {
     if (file.type === 'file') {
       loadFile(file.rel_path).then((res) => {
         const text = res.data ?? '';
-        ref.editor.ctx.action(replaceAll(text));
+        ref.editor.ctx.action(replaceAll(text, true));
+
         state.currentFile = file.rel_path;
-        console.log(state);
+        router.route(ROOT + file.rel_path);
       });
     }
   });
@@ -112,6 +130,7 @@ async function loadFile(relPath) {
     if (!res.ok) throw Error(`${res.status}: Could not get file; does it exist?`);
     data = await res.text();
   } catch (e) {
+    console.error(e);
     err = e;
   }
 
@@ -122,17 +141,18 @@ async function updateFile(relPath, content) {
   let ok = true;
   let err = undefined;
 
-  if (updateFile.controller !== undefined)
-    updateFile.controller.abort();
-  updateFile.controller = new AbortController();
+  if (fileControllers[relPath] !== undefined)
+    fileControllers[relPath].abort();
+  fileControllers[relPath] = new AbortController();
 
   const formData = new FormData();
+  formData.append('filename', relPath);
   formData.append('content', content);
 
   try {
-    let res = await fetch(`/files/${relPath}`, {
+    let res = await fetch(`/files`, {
       method: 'POST',
-      signal: updateFile.controller.signal,
+      signal: fileControllers[relPath].signal,
       body: formData
     });
 
@@ -141,6 +161,8 @@ async function updateFile(relPath, content) {
     ok = false;
     err = e;
     console.error(e);
+  } finally {
+    delete fileControllers[relPath];
   }
 
   return { ok, err };
@@ -169,6 +191,21 @@ getFileTree()
   })
   .catch(console.error)
   .finally(redraw);
+
+router
+  .on('/', () => { /* no op */ })
+  .on(ROOT + '*', (params) => {
+    const filePath = params.wild;
+    if (!state.currentFile) {
+      loadFile(filePath).then((res) => {
+        const text = res.data ?? '';
+        ref.editor.ctx.action(replaceAll(text, true));
+        state.currentFile = filePath;
+      }).catch(() => { /* no op */ });
+    }
+  });
+
+router.listen();
 
 const App = () => (
   <div class="container">

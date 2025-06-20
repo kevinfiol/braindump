@@ -1,3 +1,6 @@
 - [x] load file content to editor after clicking file in file tree
 - [x] auto save to the actual file on the filesystem after debounce
-- [ ] i dont think saves should be debounced or aborted globally. maybe per file. for simplicity's sake, maybe remove that part for now
+- [x] i dont think saves should be debounced or aborted globally. maybe per file. for simplicity's sake, maybe remove that part for now
+- [x] stop trying to update after a replace
+- [x] clicking a file should "route" to it
+- [x] refreshing on a route should open the right file
