@@ -4,3 +4,4 @@
 - [x] stop trying to update after a replace
 - [x] clicking a file should "route" to it
 - [x] refreshing on a route should open the right file
+- [ ] if you refresh on a file that is nested or not, it should be focused on the sidebar
