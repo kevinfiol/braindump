@@ -4,4 +4,17 @@
 - [x] stop trying to update after a replace
 - [x] clicking a file should "route" to it
 - [x] refreshing on a route should open the right file
-- [ ] if you refresh on a file that is nested or not, it should be focused on the sidebar
+- [x] if you refresh on a file that is nested or not, it should be focused on the sidebar
+- [x] focusing on a another file should unfocus the last focused file
+- [ ] some form of client-side caching to reduce flicker
+- [ ] refactor getFileTree -> router mount operation to be more concurrent if possible
+- [ ] add way to create new file when dir is empty
+- [ ] add right-click context menu
+  - [ ] create file
+  - [ ] create directory
+  - [ ] delete file
+  - [ ] delete directory
+  - [ ] rename file
+  - [ ] rename directory
+- [ ] deleting a file in the directory should reflect in the file tree/editor
+- [ ] editing a file in the directory should reflect in the file editor

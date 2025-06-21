@@ -111,6 +111,7 @@ function mountFileTree(dom) {
 
         state.currentFile = file.rel_path;
         router.route(ROOT + file.rel_path);
+        ref.fileTree.focusEntry(file.rel_path);
       });
     }
   });
@@ -183,29 +184,33 @@ async function getFileTree() {
   return { data, err };
 }
 
+function initRouter() {
+  router
+    .on('/', () => { /* no op */ })
+    .on(ROOT + '*', (params) => {
+      const filePath = params.wild;
+      if (!state.currentFile) {
+        loadFile(filePath).then((res) => {
+          const text = res.data ?? '';
+          ref.editor.ctx.action(replaceAll(text, true));
+          state.currentFile = filePath;
+          ref.fileTree.focusEntry(filePath);
+        }).catch(() => { /* no op */ });
+      }
+    });
+
+  router.listen();
+}
+
 // init
 getFileTree()
   .then(({ data, error }) => {
     if (error) throw error;
     setFileTree(data);
+    initRouter();
   })
   .catch(console.error)
   .finally(redraw);
-
-router
-  .on('/', () => { /* no op */ })
-  .on(ROOT + '*', (params) => {
-    const filePath = params.wild;
-    if (!state.currentFile) {
-      loadFile(filePath).then((res) => {
-        const text = res.data ?? '';
-        ref.editor.ctx.action(replaceAll(text, true));
-        state.currentFile = filePath;
-      }).catch(() => { /* no op */ });
-    }
-  });
-
-router.listen();
 
 const App = () => (
   <div class="container">

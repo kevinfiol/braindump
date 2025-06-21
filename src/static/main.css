@@ -76,8 +76,9 @@ body > #app > .container {
   cursor: pointer;
 }
 
-.file-tree-node:hover {
-  background-color: #e6e6e6;
+.file-tree-node:hover,
+.file-tree-node.focused {
+  background-color: #ededed;
 }
 
 .file-tree-dir .file-tree-node:not(summary),

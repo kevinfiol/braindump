@@ -2,6 +2,7 @@ export class FileTree {
   constructor(el, data) {
     this.el = el;
     this.entries = new Map;
+    this.focusedEl = undefined;
 
     if (!data || data.name !== 'root' || data.type !== 'directory') {
       throw Error('Invalid file tree data');
@@ -60,6 +61,25 @@ export class FileTree {
     const el = this.entries.get(rel_path);
     el.remove();
     this.entries.delete(rel_path);
+  }
+
+  focusEntry(rel_path) {
+    const entry = this.entries.get(rel_path);
+    if (!entry) throw Error('Cannot focus on a non-existent path');
+    if (entry.data.type !== 'file') throw Error('Must focus on a file entry');
+    const tokens = rel_path.split('/');
+
+    // "open" directories
+    for (let i = 0, dir = ''; i < (tokens.length - 1); i++) {
+      if (dir !== '') dir += '/';
+      dir += tokens[i];
+      const dirEntry = this.entries.get(dir);
+      dirEntry.el.setAttribute('open', true);
+    }
+
+    if (this.focusedEl) this.focusedEl.classList.remove('focused');
+    this.focusedEl = entry.el;
+    entry.el.classList.add('focused');
   }
 
   setHandlers(event, handler) {
