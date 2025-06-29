@@ -94,3 +94,28 @@ body > #app > .container {
 .file-tree-dir[open] > summary.file-tree-node::before {
   content: '📂';
 }
+
+.file-tree-file::before {
+  content: '📄';
+  padding-right: 4px;
+}
+
+.file-tree-context-menu {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 150px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.file-tree-context-menu-item {
+  padding: 8px 22px;
+  cursor: pointer;
+}
+
+.file-tree-context-menu-item:hover {
+  background-color: #f0f0f0;
+}

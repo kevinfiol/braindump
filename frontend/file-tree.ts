@@ -2,7 +2,11 @@ export class FileTree {
   constructor(el, data) {
     this.el = el;
     this.entries = new Map;
+    this.elEntryMap = new WeakMap;
     this.focusedEl = undefined;
+
+    this.ctxMenuEl = undefined;
+    this.ctxMenuItems = [];
 
     if (!data || data.name !== 'root' || data.type !== 'directory') {
       throw Error('Invalid file tree data');
@@ -31,36 +35,44 @@ export class FileTree {
     return el;
   }
 
-  createEntry(e) {
-    if (e.type !== 'file') throw Error('Invalid data type for file');
-    const file = document.createElement('div');
-    file.classList.add('file-tree-node', 'file-tree-file');
-    file.innerText = e.name;
-    file.setAttribute('draggable', true);
+  createEntry(entry) {
+    if (entry.type !== 'file') throw Error('Invalid data type for file');
+    const fileEl = document.createElement('div');
+    fileEl.classList.add('file-tree-node', 'file-tree-file');
+    fileEl.innerText = entry.name;
+    fileEl.setAttribute('draggable', true);
 
-    this.entries.set(e.rel_path, { el: file, data: e });
-    return file;
+    const entryProps = { el: fileEl, data: entry };
+    this.entries.set(entry.rel_path, entryProps);
+    this.elEntryMap.set(fileEl, entryProps);
+
+    return fileEl;
   }
 
-  createDir(e) {
-    if (e.type !== 'directory') throw Error('Invalid data type for directory');
-    const dir = document.createElement('details');
+  createDir(entry) {
+    if (entry.type !== 'directory') throw Error('Invalid data type for directory');
+    const dirEl = document.createElement('details');
     const dirLabel = document.createElement('summary');
-    dirLabel.innerText = e.name;
+    dirLabel.innerText = entry.name;
     dirLabel.classList.add('file-tree-node');
 
-    dir.appendChild(dirLabel);
-    dir.classList.add('file-tree-dir');
-    dir.setAttribute('draggable', true);
+    dirEl.appendChild(dirLabel);
+    dirEl.classList.add('file-tree-dir');
+    dirEl.setAttribute('draggable', true);
 
-    this.entries.set(e.rel_path, { el: dir, data: e });
-    return dir;
+    const entryProps = { el: dirEl, data: entry };
+    this.entries.set(entry.rel_path, entryProps);
+    this.elEntryMap.set(dirLabel, entryProps); // use the summary el as the key
+    return dirEl;
   }
 
   remove(rel_path) {
-    const el = this.entries.get(rel_path);
-    el.remove();
+    const entry = this.entries.get(rel_path);
+    if (!entry) throw Error('Cannot remove entry; does not exist');
+
+    this.elEntryMap.delete(entry.el);
     this.entries.delete(rel_path);
+    entry.el.remove();
   }
 
   focusEntry(rel_path) {
@@ -86,11 +98,60 @@ export class FileTree {
     if (typeof handler !== 'function')
       throw Error('Must pass function as click handler');
 
-    for (const e of this.entries.values()) {
-      const { el, data } = e;
+    for (const entryProps of this.entries.values()) {
+      const { el, data } = entryProps;
       el.addEventListener(event, (ev) => {
         handler(ev, data);
       });
     }
+  }
+
+  setContextMenu(menuItems) {
+    if (!Array.isArray(menuItems)) throw Error('Menu items must be an array');
+    this.ctxMenuItems = menuItems;
+    this.el.addEventListener('contextmenu', this.handleContextMenu.bind(this));
+  }
+
+  handleContextMenu(ev) {
+    ev.preventDefault();
+    if (this.ctxMenuEl) this.ctxMenuEl.remove();
+
+    const target = ev.target.closest('.file-tree-node');
+    if (!target) return;
+
+    const entryProps = this.elEntryMap.get(target);
+    if (!entryProps) return;
+
+    const { el, data } = entryProps;
+    const menu = document.createElement('div');
+    this.ctxMenuEl = menu;
+
+    menu.classList.add('file-tree-context-menu');
+    menu.style.top = event.clientY + 'px';
+    menu.style.left = event.clientX + 'px';
+
+    for (const item of this.ctxMenuItems) {
+      if (!item[data.type]) continue;
+      const menuItem = document.createElement('div');
+      menuItem.classList.add('file-tree-context-menu-item');
+      menuItem.innerText = item.name;
+      menuItem.addEventListener('click', () => {
+        item.action(entryProps);
+        menu.remove();
+      });
+
+      menu.appendChild(menuItem);
+    }
+
+    document.body.appendChild(menu);
+
+    const removeMenu = () => {
+      menu.remove();
+      document.removeEventListener('click', removeMenu);
+    };
+
+    setTimeout(() =>
+      document.addEventListener('click', removeMenu, 0)
+    );
   }
 }

@@ -103,6 +103,7 @@ function mountEditor(dom) {
 
 function mountFileTree(dom) {
   ref.fileTree = new FileTree(dom, state.fileTree);
+
   ref.fileTree.setHandlers('click', (ev, file) => {
     if (file.type === 'file') {
       loadFile(file.rel_path).then((res) => {
@@ -115,6 +116,41 @@ function mountFileTree(dom) {
       });
     }
   });
+
+  ref.fileTree.setContextMenu([
+    {
+      name: 'New File',
+      file: false,
+      directory: true,
+      action: (props) => {
+
+      }
+    },
+    {
+      name: 'Rename...',
+      file: true,
+      directory: true,
+      action: (props) => {
+        console.log(props);
+      }
+    },
+    {
+      name: 'Delete',
+      file: true,
+      directory: true,
+      action: (props) => {
+        console.log(props);
+      }
+    },
+    {
+      name: 'New Folder',
+      file: false,
+      directory: true,
+      action: (props) => {
+        
+      }
+    }
+  ]);
 
   return () => {
     // todo destroy filetree
