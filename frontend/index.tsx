@@ -129,9 +129,31 @@ function mountFileTree(dom) {
     {
       name: 'Rename...',
       file: true,
-      directory: true,
-      action: (props) => {
-        console.log(props);
+      directory: false,
+      action: ({ data, el }, tree) => {
+        const newFilename = prompt(
+          'Enter new file or folder name (.md extension is optional)',
+          data.name.split('.')[0] // exclude extension
+        );
+
+        renameFile(data.rel_path, newFilename)
+          .then((res) => {
+            if (res.err) return;
+            const newData = res.data.result;
+            const newProps = { el, data: newData };
+
+            // remove old entry
+            tree.entries.delete(data.rel_path);
+            // add new
+            tree.entries.set(newData.rel_path, newProps);
+            tree.elEntryMap.set(el, newProps);
+            // update dom
+            el.innerText = newData.name;
+
+            if (state.currentFile === data.rel_path) {
+              router.route(ROOT + newData.rel_path);
+            }
+          });
       }
     },
     {
@@ -169,6 +191,30 @@ async function loadFile(relPath) {
   } catch (e) {
     console.error(e);
     err = e;
+  }
+
+  return { data, err };
+}
+
+async function renameFile(relPath, newFilename) {
+  let data = {};
+  let err = undefined;
+
+  const formData = new FormData();
+  formData.append('filename', relPath);
+  formData.append('new_filename', newFilename);
+
+  try {
+    let res = await fetch('/rename', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw Error(`${res.status}: Could not rename file`);
+    data = await res.json();
+  } catch (e) {
+    err = e;
+    console.error(e);
   }
 
   return { data, err };

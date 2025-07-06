@@ -136,7 +136,7 @@ export class FileTree {
       menuItem.classList.add('file-tree-context-menu-item');
       menuItem.innerText = item.name;
       menuItem.addEventListener('click', () => {
-        item.action(entryProps);
+        item.action(entryProps, this);
         menu.remove();
       });
 

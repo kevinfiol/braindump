@@ -14,7 +14,8 @@
   - [ ] create directory
   - [ ] delete file
   - [ ] delete directory
-  - [ ] rename file
+  - [x] rename file
+    - [ ] so this works, but now if you rename a file in the filetree and try clicking on it, the event handler is still stale, navigating you to a file that no longer exists. need to fix this. probably a better solution to avoid having event handlers possible referencing stale objects. should always reference the "up to date" object of properties for a given file/element.
   - [ ] rename directory
 - [ ] drag and drop
   - [ ] move files
@@ -24,3 +25,5 @@
 - [ ] isolate util functions in separate file
 - [ ] deleting a file in the directory should reflect in the file tree/editor
 - [ ] editing a file in the directory should reflect in the file editor
+- [ ] add ability to share whole notebook
+- [ ] add ability to share single files

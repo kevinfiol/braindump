@@ -42,5 +42,16 @@ local function walk(dir, tree)
 end
 
 return {
-  walk = walk
+  walk = walk,
+
+  sanitizeFilename = function(x)
+    -- replace any character that is not alphanumeric, hyphen, underscore, or tilde with empty string
+    x = string.gsub(x or '', "[^%w%-%_~]", '')
+    x = EscapeUser(x)
+    return x
+  end,
+
+  removeExtension = function(s)
+    return s:match("(.+)%..+$") or s
+  end
 }
