@@ -1,5 +1,50 @@
+type BaseNode = {
+  name: string;
+  path: string;
+  rel_path: string;
+};
+
+type Node = FileNode | DirectoryNode;
+
+type ChildrenMap = {
+  [key: string]: Node;
+};
+
+type FileNode = BaseNode & {
+  type: 'file';
+};
+
+type DirectoryNode = BaseNode & {
+  type: 'directory';
+  children: ChildrenMap;
+};
+
+type RootData = DirectoryNode & {
+  name: 'root';
+};
+
+interface Props {
+  el: HTMLElement;
+  data: Node;
+}
+
+interface ContextMenuItem {
+  name: string;
+  file?: boolean;
+  directory?: boolean;
+  action: (props: Props, tree: FileTree) => void;
+}
+
 export class FileTree {
-  constructor(el, data) {
+  el: Element;
+  elEntryMap: WeakMap<Element, Props>;
+  entries: Map<string, Props>;
+
+  focusedEl: Element | undefined;
+  ctxMenuEl: Element | undefined;
+  ctxMenuItems: ContextMenuItem[];
+
+  constructor(el: Element, data: RootData) {
     this.el = el;
     this.entries = new Map;
     this.elEntryMap = new WeakMap;
@@ -16,12 +61,12 @@ export class FileTree {
     this.mount(this.el, data.children);
   }
 
-  mount(el, children) {
-    children = Object.values(children)
+  mount(el: Element, children: ChildrenMap) {
+    const childs = Object.values(children)
       .sort((a, b) => a.name < b.name ? 1 : -1)
       .sort((a, b) => a.type === 'file' ? 1 : -1);
 
-    for (const e of children) {
+    for (const e of childs) {
       if (e.type === 'file') {
         const file = this.createEntry(e);
         el.appendChild(file);
@@ -35,12 +80,12 @@ export class FileTree {
     return el;
   }
 
-  createEntry(entry) {
+  createEntry(entry: FileNode) {
     if (entry.type !== 'file') throw Error('Invalid data type for file');
     const fileEl = document.createElement('div');
     fileEl.classList.add('file-tree-node', 'file-tree-file');
     fileEl.innerText = entry.name;
-    fileEl.setAttribute('draggable', true);
+    fileEl.setAttribute('draggable', 'true');
 
     const entryProps = { el: fileEl, data: entry };
     this.entries.set(entry.rel_path, entryProps);
@@ -49,7 +94,7 @@ export class FileTree {
     return fileEl;
   }
 
-  createDir(entry) {
+  createDir(entry: DirectoryNode) {
     if (entry.type !== 'directory') throw Error('Invalid data type for directory');
     const dirEl = document.createElement('details');
     const dirLabel = document.createElement('summary');
@@ -58,7 +103,7 @@ export class FileTree {
 
     dirEl.appendChild(dirLabel);
     dirEl.classList.add('file-tree-dir');
-    dirEl.setAttribute('draggable', true);
+    dirEl.setAttribute('draggable', 'true');
 
     const entryProps = { el: dirEl, data: entry };
     this.entries.set(entry.rel_path, entryProps);
@@ -66,7 +111,7 @@ export class FileTree {
     return dirEl;
   }
 
-  remove(rel_path) {
+  remove(rel_path: string) {
     const entry = this.entries.get(rel_path);
     if (!entry) throw Error('Cannot remove entry; does not exist');
 
@@ -75,7 +120,7 @@ export class FileTree {
     entry.el.remove();
   }
 
-  focusEntry(rel_path) {
+  focusEntry(rel_path: string) {
     const entry = this.entries.get(rel_path);
     if (!entry) throw Error('Cannot focus on a non-existent path');
     if (entry.data.type !== 'file') throw Error('Must focus on a file entry');
@@ -86,7 +131,7 @@ export class FileTree {
       if (dir !== '') dir += '/';
       dir += tokens[i];
       const dirEntry = this.entries.get(dir);
-      dirEntry.el.setAttribute('open', true);
+      if (dirEntry) dirEntry.el.setAttribute('open', 'true');
     }
 
     if (this.focusedEl) this.focusedEl.classList.remove('focused');
@@ -94,7 +139,7 @@ export class FileTree {
     entry.el.classList.add('focused');
   }
 
-  setHandlers(event, handler) {
+  setHandlers(event: string, handler: (ev: Event, data: Node) => void) {
     if (typeof handler !== 'function')
       throw Error('Must pass function as click handler');
 
@@ -106,29 +151,30 @@ export class FileTree {
     }
   }
 
-  setContextMenu(menuItems) {
+  setContextMenu(menuItems: ContextMenuItem[]) {
     if (!Array.isArray(menuItems)) throw Error('Menu items must be an array');
     this.ctxMenuItems = menuItems;
     this.el.addEventListener('contextmenu', this.handleContextMenu.bind(this));
   }
 
-  handleContextMenu(ev) {
+  handleContextMenu(ev: MouseEvent) {
     ev.preventDefault();
     if (this.ctxMenuEl) this.ctxMenuEl.remove();
 
+    if (!(ev.target instanceof Element)) return;
     const target = ev.target.closest('.file-tree-node');
     if (!target) return;
 
     const entryProps = this.elEntryMap.get(target);
     if (!entryProps) return;
 
-    const { el, data } = entryProps;
+    const { data } = entryProps;
     const menu = document.createElement('div');
     this.ctxMenuEl = menu;
 
     menu.classList.add('file-tree-context-menu');
-    menu.style.top = event.clientY + 'px';
-    menu.style.left = event.clientX + 'px';
+    menu.style.top = ev.clientY + 'px';
+    menu.style.left = ev.clientX + 'px';
 
     for (const item of this.ctxMenuItems) {
       if (!item[data.type]) continue;
@@ -151,7 +197,7 @@ export class FileTree {
     };
 
     setTimeout(() =>
-      document.addEventListener('click', removeMenu, 0)
+      document.addEventListener('click', removeMenu), 0
     );
   }
 }
