@@ -64,11 +64,11 @@ export class FileTree {
   mount(el: Element, children: ChildrenMap) {
     const childs = Object.values(children)
       .sort((a, b) => a.name < b.name ? 1 : -1)
-      .sort((a, b) => a.type === 'file' ? 1 : -1);
+      .sort((a) => a.type === 'file' ? 1 : -1);
 
     for (const e of childs) {
       if (e.type === 'file') {
-        const file = this.createEntry(e);
+        const file = this.createFile(e);
         el.appendChild(file);
       } else if (e.type === 'directory') {
         const dir = this.createDir(e);
@@ -80,7 +80,7 @@ export class FileTree {
     return el;
   }
 
-  createEntry(entry: FileNode) {
+  createFile(entry: FileNode) {
     if (entry.type !== 'file') throw Error('Invalid data type for file');
     const fileEl = document.createElement('div');
     fileEl.classList.add('file-tree-node', 'file-tree-file');
