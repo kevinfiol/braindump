@@ -2,11 +2,12 @@ type BaseNode = {
   name: string;
   path: string;
   rel_path: string;
+  el?: HTMLElement;
 };
 
 type Node = FileNode | DirectoryNode;
 
-type ChildrenMap = {
+interface ChildrenMap {
   [key: string]: Node;
 };
 
@@ -23,9 +24,18 @@ type RootData = DirectoryNode & {
   name: 'root';
 };
 
-interface Props {
+type FileProps = FileNode & {
   el: HTMLElement;
-  data: Node;
+};
+
+type DirectoryProps = DirectoryNode & {
+  el: HTMLElement
+};
+
+type Props = FileProps | DirectoryProps;
+
+interface TreeMap {
+  [name: string]: Props;
 }
 
 interface ContextMenuItem {
@@ -37,8 +47,9 @@ interface ContextMenuItem {
 
 export class FileTree {
   el: Element;
+  els: Set<HTMLElement>;
   elEntryMap: WeakMap<Element, Props>;
-  entries: Map<string, Props>;
+  map: ChildrenMap;
 
   focusedEl: Element | undefined;
   ctxMenuEl: Element | undefined;
@@ -46,10 +57,11 @@ export class FileTree {
 
   constructor(el: Element, data: RootData) {
     this.el = el;
-    this.entries = new Map;
+    this.els = new Set;
     this.elEntryMap = new WeakMap;
     this.focusedEl = undefined;
 
+    this.map = {};
     this.ctxMenuEl = undefined;
     this.ctxMenuItems = [];
 
@@ -58,7 +70,7 @@ export class FileTree {
     }
 
     this.el.classList.add('file-tree');
-    this.mount(this.el, data.children);
+    this.map = this.mount(this.el, data.children);
   }
 
   mount(el: Element, children: ChildrenMap) {
@@ -68,87 +80,120 @@ export class FileTree {
 
     for (const e of childs) {
       if (e.type === 'file') {
-        const file = this.createFile(e);
-        el.appendChild(file);
+        const props = this.createFile(e);
+        children[props.name].el = props.el;
+        el.appendChild(props.el);
       } else if (e.type === 'directory') {
-        const dir = this.createDir(e);
-        this.mount(dir, e.children)  
-        el.appendChild(dir);
+        const props = this.createDir(e);
+        children[props.name].el = props.el;
+        this.mount(props.el, e.children);
+        el.appendChild(props.el);
       }
     }
 
-    return el;
+    return children;
   }
 
   createFile(entry: FileNode) {
-    if (entry.type !== 'file') throw Error('Invalid data type for file');
-    const fileEl = document.createElement('div');
-    fileEl.classList.add('file-tree-node', 'file-tree-file');
-    fileEl.innerText = entry.name;
-    fileEl.setAttribute('draggable', 'true');
+    const el = document.createElement('div');
+    el.classList.add('file-tree-node', 'file-tree-file');
+    el.innerText = entry.name;
+    el.setAttribute('draggable', 'true');
 
-    const entryProps = { el: fileEl, data: entry };
-    this.entries.set(entry.rel_path, entryProps);
-    this.elEntryMap.set(fileEl, entryProps);
+    const props = { el, ...entry } as FileProps;
+    this.els.add(el);
+    this.elEntryMap.set(el, props);
 
-    return fileEl;
+    return props;
   }
 
   createDir(entry: DirectoryNode) {
-    if (entry.type !== 'directory') throw Error('Invalid data type for directory');
-    const dirEl = document.createElement('details');
-    const dirLabel = document.createElement('summary');
-    dirLabel.innerText = entry.name;
-    dirLabel.classList.add('file-tree-node');
+    const el = document.createElement('details');
+    const label = document.createElement('summary');
+    label.innerText = entry.name;
+    label.classList.add('file-tree-node');
 
-    dirEl.appendChild(dirLabel);
-    dirEl.classList.add('file-tree-dir');
-    dirEl.setAttribute('draggable', 'true');
+    el.appendChild(label);
+    el.classList.add('file-tree-dir');
+    el.setAttribute('draggable', 'true');
 
-    const entryProps = { el: dirEl, data: entry };
-    this.entries.set(entry.rel_path, entryProps);
-    this.elEntryMap.set(dirLabel, entryProps); // use the summary el as the key
-    return dirEl;
+    const props = { el, ...entry } as DirectoryProps;
+    this.els.add(el);
+    this.elEntryMap.set(label, props); // use the summary el as the key
+    return props;
+  }
+
+  getNode(path: string | string[]) {
+    if (typeof path === 'string') {
+      path = path.split('/');
+    }
+
+    let token = path[0];
+    if (typeof token !== 'string') return;
+
+    let node = this.map[token];
+    if (!node) throw Error(`File or directory does not exist ${token}`);
+
+    for (let i = 1; i < path.length; i++) {
+      token = path[i];
+      if (node.type === 'file') throw Error(`Directory does not exist: ${token}`)
+      node = node.children[token];
+      if (!node) throw Error(`File does not exist: ${token}`);
+    }
+
+    return node;
   }
 
   remove(rel_path: string) {
-    const entry = this.entries.get(rel_path);
-    if (!entry) throw Error('Cannot remove entry; does not exist');
+    const path = rel_path.split('/');
+    const entry = this.getNode(path);
+    if (entry === undefined) throw Error('Cannot remove entry; does not exist');
 
-    this.elEntryMap.delete(entry.el);
-    this.entries.delete(rel_path);
-    entry.el.remove();
+    this.els.delete(entry.el!);
+    this.elEntryMap.delete(entry.el!);
+    entry.el!.remove();
+
+    // delete child object from map
+    const filename = path.pop() as string;
+    const dirEntry = this.getNode(path);
+    if (dirEntry === undefined) throw Error('Cannot get directory node');
+    if (dirEntry.type === 'directory') {
+      delete dirEntry.children[filename];
+    }
   }
 
   focusEntry(rel_path: string) {
-    const entry = this.entries.get(rel_path);
-    if (!entry) throw Error('Cannot focus on a non-existent path');
-    if (entry.data.type !== 'file') throw Error('Must focus on a file entry');
     const tokens = rel_path.split('/');
+    const entry = this.getNode(tokens);
+
+    if (!entry) throw Error('Cannot focus on a non-existent path');
+    if (entry.type !== 'file') throw Error('Must focus on a file entry');
 
     // "open" directories
     for (let i = 0, dir = ''; i < (tokens.length - 1); i++) {
       if (dir !== '') dir += '/';
       dir += tokens[i];
-      const dirEntry = this.entries.get(dir);
-      if (dirEntry) dirEntry.el.setAttribute('open', 'true');
+      const dirEntry = this.getNode(dir);
+      if (dirEntry) dirEntry.el!.setAttribute('open', 'true');
     }
 
     if (this.focusedEl) this.focusedEl.classList.remove('focused');
     this.focusedEl = entry.el;
-    entry.el.classList.add('focused');
+    entry.el!.classList.add('focused');
   }
 
   setHandlers(event: string, handler: (ev: Event, data: Node) => void) {
     if (typeof handler !== 'function')
       throw Error('Must pass function as click handler');
 
-    for (const entryProps of this.entries.values()) {
-      const { el, data } = entryProps;
-      el.addEventListener(event, (ev) => {
-        handler(ev, data);
-      });
-    }
+    this.els.forEach((el) => {
+      const props = this.elEntryMap.get(el);
+      if (props) {
+        el.addEventListener(event, (ev) => {
+          handler(ev, props);
+        });
+      }
+    });
   }
 
   setContextMenu(menuItems: ContextMenuItem[]) {
@@ -165,10 +210,9 @@ export class FileTree {
     const target = ev.target.closest('.file-tree-node');
     if (!target) return;
 
-    const entryProps = this.elEntryMap.get(target);
-    if (!entryProps) return;
+    const props = this.elEntryMap.get(target);
+    if (!props) return;
 
-    const { data } = entryProps;
     const menu = document.createElement('div');
     this.ctxMenuEl = menu;
 
@@ -177,12 +221,12 @@ export class FileTree {
     menu.style.left = ev.clientX + 'px';
 
     for (const item of this.ctxMenuItems) {
-      if (!item[data.type]) continue;
+      if (!item[props.type]) continue;
       const menuItem = document.createElement('div');
       menuItem.classList.add('file-tree-context-menu-item');
       menuItem.innerText = item.name;
       menuItem.addEventListener('click', () => {
-        item.action(entryProps, this);
+        item.action(props, this);
         menu.remove();
       });
 
