@@ -61,6 +61,25 @@ moon.post('/files', function (r)
   })
 end)
 
+moon.post('/delete', function (r)
+  local rel_path = r.params.filename
+  local file_path = path.join(constant.FILES_DIR, rel_path)
+  local ok = path.exists
+
+  if ok then
+    if path.isdir(file_path) then
+      unix.rmrf(file_path)
+    elseif path.isfile(file_path) then
+      unix.unlink(file_path)
+    end
+  end
+
+  return moon.serveContent('json', {
+    ok = ok,
+    result = file_path
+  })
+end)
+
 moon.post('/rename', function (r)
   local rel_path = r.params.filename
   local new_filename = util.removeExtension(r.params.new_filename)

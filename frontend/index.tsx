@@ -161,7 +161,9 @@ function mountFileTree(dom) {
       file: true,
       directory: true,
       action: (props) => {
-        console.log(props);
+        deleteFile(props.rel_path).then(() => {
+          ref.fileTree.remove(props.rel_path);
+        });
       }
     },
     {
@@ -218,6 +220,28 @@ async function renameFile(relPath, newFilename) {
   }
 
   return { data, err };
+}
+
+async function deleteFile(relPath) {
+  let err = undefined;
+  const formData = new FormData();
+  formData.append('filename', relPath);
+
+  try {
+    let res = await fetch('/delete', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) throw Error(`${res.status}: Could not delete file`);
+    const data = await res.json();
+    if (!data.ok) throw Error('Backend error occurred during deletion. See logs');
+  } catch (e) {
+    err = e;
+    console.error(e);
+  }
+
+  return { err };
 }
 
 async function updateFile(relPath, content) {

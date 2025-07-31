@@ -119,7 +119,7 @@ export class FileTree {
 
     const props = { el, ...entry } as DirectoryProps;
     this.els.add(el);
-    this.elEntryMap.set(label, props); // use the summary el as the key
+    this.elEntryMap.set(el, props);
     return props;
   }
 
@@ -149,6 +149,10 @@ export class FileTree {
     const entry = this.getNode(path);
     if (entry === undefined) throw Error('Cannot remove entry; does not exist');
 
+    if (entry.type === 'directory') {
+      this.removeDir(entry);
+    }
+
     this.els.delete(entry.el!);
     this.elEntryMap.delete(entry.el!);
     entry.el!.remove();
@@ -160,6 +164,24 @@ export class FileTree {
     if (dirEntry.type === 'directory') {
       delete dirEntry.children[filename];
     }
+
+    debugger;
+  }
+
+  removeDir(node: Node) {
+    if (node.type !== 'directory') {
+      return;
+    }
+
+    Object.values(node.children).forEach((node) => {
+      this.els.delete(node.el!);
+      this.elEntryMap.delete(node.el!);
+      node.el!.remove();
+
+      if (node.type === 'directory') {
+        this.removeDir(node);
+      }
+    });
   }
 
   focusEntry(rel_path: string) {
@@ -207,8 +229,12 @@ export class FileTree {
     if (this.ctxMenuEl) this.ctxMenuEl.remove();
 
     if (!(ev.target instanceof Element)) return;
-    const target = ev.target.closest('.file-tree-node');
+    let target = ev.target.closest('.file-tree-node');
     if (!target) return;
+
+    if (target.tagName === 'SUMMARY' && target.parentElement) {
+      target = target.parentElement;
+    }
 
     const props = this.elEntryMap.get(target);
     if (!props) return;
