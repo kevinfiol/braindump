@@ -1,9 +1,10 @@
 {
   "scripts": {
-    "build": "esbuild frontend/index.tsx --bundle --minify --jsx-factory=m --jsx-fragment=\"'['\" --loader:.woff=file --loader:.woff2=file --loader:.ttf=file --outfile=src/build/app.js"
+    "build": "node esbuild.js"
   },
   "dependencies": {
     "@milkdown/crepe": "^7.13.1",
+    "@milkdown/kit": "^7.15.2",
     "esbuild": "0.25.1",
     "navaid": "^1.2.0",
     "umai": "^0.4.2"
